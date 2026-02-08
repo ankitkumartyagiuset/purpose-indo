@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kejutan Untukmu ❤️</title>
+    <style>
+        /* --- RESET & PENGATURAN GLOBAL --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(-45deg, #ff9a9e, #fad0c4, #fad0c4, #a18cd1);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            color: #333;
+            user-select: none; 
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* --- JEJAK KURSOR (Hati) --- */
+        .cursor-heart {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            pointer-events: none; /* Biarkan klik tembus */
+            z-index: 9999;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23ff4757'%3E%3Cpath d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+            background-size: cover;
+            animation: fadeOut 1s forwards;
+        }
+        @keyframes fadeOut {
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+
+        /* --- TATA LETAK APLIKASI --- */
+        #app {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        .page {
+            display: none; /* Tersembunyi secara default */
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 20px;
+            text-align: center;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .page.active {
+            display: flex; /* Tampilkan halaman aktif */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Area yang bisa di-scroll untuk cerita/kartu */
+        .scroll-container {
+            max-height: 85vh;
+            overflow-y: auto;
+            width: 100%;
+            max-width: 600px;
+            padding-bottom: 50px;
+        }
+        .scroll-container::-webkit-scrollbar { width: 0px; } /* Sembunyikan scrollbar */
+
+        /* --- TIPOGRAFI --- */
+        h1 { font-family: 'Brush Script MT', cursive; font-size: 3rem; color: #ff4757; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(255,255,255,0.8); }
+        h2 { font-size: 2rem; color: #2f3542; margin-bottom: 20px; }
+        p { font-size: 1.2rem; line-height: 1.6; background: rgba(255,255,255,0.7); padding: 15px; border-radius: 15px; margin-bottom: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+
+        /* --- TOMBOL --- */
+        .btn {
+            background: #ff4757;
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.4);
+            transition: transform 0.2s;
+            font-weight: bold;
+            outline: none;
+        }
+        .btn:hover { transform: translateY(-3px); }
+        .btn:active { transform: scale(0.95); }
+        .btn-sec { background: white; color: #ff4757; margin-top: 10px; }
+
+        /* --- TOMBOL MUSIK --- */
+        #music-btn {
+            position: fixed;
+            top: 20px; right: 20px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            width: 50px; height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        /* --- HALAMAN 2: GARIS WAKTU (TIMELINE) --- */
+        .timeline-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #ff4757;
+            text-align: left;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+        .timeline-item.show { opacity: 1; transform: translateY(0); }
+        .timeline-item b { color: #57606f; display: block; margin-bottom: 5px; }
+
+        /* --- HALAMAN 3: KARTU --- */
+        .card-grid { display: flex; flex-wrap: wrap; gap: 15px; justify-content: center; }
+        .card {
+            width: 140px; height: 180px;
+            perspective: 1000px; cursor: pointer;
+        }
+        .card-inner {
+            position: relative; width: 100%; height: 100%;
+            text-align: center; transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card:hover .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back {
+            position: absolute; width: 100%; height: 100%;
+            -webkit-backface-visibility: hidden; backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; flex-direction: column; padding: 5px;
+        }
+        .card-back { background: #ff4757; color: white; transform: rotateY(180deg); }
+        .emoji { font-size: 2.5rem; display: block; margin-bottom: 10px; }
+
+        /* --- HALAMAN 4: LAMARAN --- */
+        .proposal-box {
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        .big-heart { font-size: 4rem; display: block; animation: beat 1s infinite; margin-bottom: 10px; }
+        @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+        /* --- HALAMAN 5: PERAYAAN --- */
+        #p5 {
+            background: #000; /* Background gelap untuk kembang api */
+            position: relative;
+        }
+        #fireworks-canvas {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1; /* Canvas di belakang teks */
+            pointer-events: none; /* Biarkan klik tembus ke tombol */
+        }
+        .celebrate-content {
+            position: relative;
+            z-index: 10; /* Teks di atas canvas */
+            color: white;
+        }
+        .celebrate-content h1 { color: #fff; text-shadow: 0 0 20px #ff4757; }
+        .celebrate-content p { background: rgba(255,255,255,0.1); color: white; backdrop-filter: blur(5px); }
+
+        /* --- TAMPILAN MOBILE --- */
+        @media (max-width: 600px) {
+            h1 { font-size: 2.2rem; }
+            .card { width: 45%; height: 160px; }
+            .emoji { font-size: 2rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Elemen Audio dengan Lagu Online -->
+    <audio id="bg-music" loop>
+        <!-- Lagu Piano Romantis (Online) -->
+        <source src="https://cdn.pixabay.com/download/audio/2022/10/14/audio_98f5f55664.mp3?filename=romantic-piano-111666.mp3" type="audio/mp3">
+    </audio>
+    
+    <!-- Tombol Musik -->
+    <button id="music-btn" onclick="toggleMusic()">🔇</button>
+
+    <!-- Aplikasi Utama -->
+    <div id="app">
+
+        <!-- HALAMAN 1: LANDING -->
+        <section id="p1" class="page active">
+            <h1>Hai, Kamu! 💖</h1>
+            <p>
+                Ada kejutan kecil buat kamu... <br>
+                Aku selalu berpikir, apakah pertemanan ini akan berlanjut ke sesuatu yang lebih, <br>
+                Tapi setiap kali ngobrol sama kamu, semua keraguan itu hilang.
+                <br><br>
+                Udah siap buat mulai babak baru?
+            </p>
+            <button class="btn" onclick="nextPage('p2')">Klik di sini ❤️</button>
+        </section>
+
+        <!-- HALAMAN 2: STORY (CERITA KITA) -->
+        <section id="p2" class="page">
+            <div class="scroll-container">
+                <h2>Kisah Kita ✨</h2>
+                <div class="timeline-item">
+                    <b>Hari Pertama</b>
+                    <p>Saat kita pertama bertemu, aku nggak nyangka kamu bakal jadi bagian paling penting dalam hidupku.</p>
+                </div>
+                <div class="timeline-item">
+                    <b>Obrolan Tengah Malam</b>
+                    <p>Ngobrol random jam 2 pagi, ketawa bareng, goda-godaan... masi ingat kan semuanya?</p>
+                </div>
+                <div class="timeline-item">
+                    <b>Sadar</b>
+                    <p>Tiba-tiba suatu hari aku sadar, kalau nggak ada kamu, hariku bakal terasa kosong.</p>
+                </div>
+                <div class="timeline-item">
+                    <b>Hari Ini</b>
+                    <p>Teman itu yang bikin hidup kerasa susah kalau ditinggalkan... tapi cinta itu yang bikin hidup mustahil tanpanya.</p>
+                </div>
+                <br>
+                <button class="btn btn-sec" onclick="nextPage('p3')">Kalau masih ada kenangan, lanjut ➡️</button>
+            </div>
+        </section>
+
+        <!-- HALAMAN 3: CARDS (KAMU ITU SPESIAL) -->
+        <section id="p3" class="page">
+            <div class="scroll-container">
+                <h2>Kenapa Kamu? 🤔</h2>
+                <div class="card-grid">
+                    <div class="card">
+                        <div class="card-inner">
+                            <div class="card-front"><span class="emoji">😂</span>Gila</div>
+                            <div class="card-back"><h3>Ketawamu</h3><p>Kelakuan kamu itu alasan kenapa aku selalu senyum.</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-inner">
+                            <div class="card-front"><span class="emoji">🧠</span>Pintar</div>
+                            <div class="card-back"><h3>Otakmu</h3><p>Kamu selalu nuntun aku ke jalan yang benar.</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-inner">
+                            <div class="card-front"><span class="emoji">🥺</span>Perhatian</div>
+                            <div class="card-back"><h3>Cintamu</h3><p>Kasih sayangmu tuh nggak pernah habis.</p></div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-inner">
+                            <div class="card-front"><span class="emoji">🔥</span>Gaya</div>
+                            <div class="card-back"><h3>Sifatmu</h3><p>Gaya dan sifat kamu itu keren banget!</p></div>
+                        </div>
+                    </div>
+                </div>
+                <br><br>
+                <button class="btn" onclick="nextPage('p4')">Pertanyaan Terakhir 🤷‍♂️</button>
+            </div>
+        </section>
+
+        <!-- HALAMAN 4: PROPOSAL -->
+        <section id="p4" class="page">
+            <div class="proposal-box">
+                <span class="big-heart">💖</span>
+                <h2>Maukah Kamu Jadi Milikku?</h2>
+                <p>
+                    Aku minta satu janji darimu... <br>
+                    Lebih dari sekadar teman, tapi tak kurang dari hidupku sendiri. <br>
+                    <strong>Bukan hanya hari ini, tapi selamanya? 💍</strong>
+                </p>
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btn" onclick="nextPage('p5')">YA ❤️</button>
+                    <button class="btn btn-sec" onclick="nextPage('p5')">PASTI DONG 💕</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- HALAMAN 5: PERAYAAN -->
+        <section id="p5" class="page">
+            <canvas id="fireworks-canvas"></canvas>
+            <div class="celebrate-content scroll-container">
+                <h1>Dia Bilang YA! 😭❤️</h1>
+                <p>
+                    Kamu udah bikin aku jadi orang paling bahagia sedunia.<br>
+                    Aku Cinta Kamu 3000! Sayangku! 💑
+                </p>
+                <br>
+                <button class="btn" onclick="alert('Happy Propose Day! Hari ini kita wajib rayakan! 🥳')">Aku Juga Cinta Kamu! 🫂</button>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- 1. NAVIGASI HALAMAN ---
+        function nextPage(pageId) {
+            // Sembunyikan semua halaman
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            // Tampilkan halaman target
+            document.getElementById(pageId).classList.add('active');
+            
+            // Logika khusus untuk halaman tertentu
+            if(pageId === 'p2') animateTimeline();
+            if(pageId === 'p5') startFireworks();
+        }
+
+        // --- 2. PENGATURAN MUSIK ---
+        let isMusicPlaying = false;
+        const audio = document.getElementById('bg-music');
+
+        function toggleMusic() {
+            const btn = document.getElementById('music-btn');
+            if(isMusicPlaying) {
+                audio.pause();
+                btn.innerText = "🔇";
+                isMusicPlaying = false;
+            } else {
+                audio.play().then(() => {
+                    btn.innerText = "🎵";
+                    isMusicPlaying = true;
+                }).catch(e => alert("Klik dulu di halaman ini untuk mengaktifkan musik!"));
+            }
+        }
+
+        // --- 3. ANIMASI KURSOR / JARI ---
+        document.addEventListener('mousemove', function(e) {
+            const heart = document.createElement('div');
+            heart.classList.add('cursor-heart');
+            heart.style.left = e.clientX + 'px';
+            heart.style.top = e.clientY + 'px';
+            document.body.appendChild(heart);
+            
+            setTimeout(() => { heart.remove(); }, 1000);
+        });
+
+        // --- 4. ANIMASI TIMELINE ---
+        function animateTimeline() {
+            const items = document.querySelectorAll('.timeline-item');
+            items.forEach((item, i) => {
+                setTimeout(() => item.classList.add('show'), i * 500);
+            });
+        }
+
+        // --- 5. KEMBANG API (FIREWORKS ENGINE) ---
+        function startFireworks() {
+            const canvas = document.getElementById('fireworks-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            function resize() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const particles = [];
+            
+            function Particle(x, y, color) {
+                this.x = x; this.y = y; this.color = color;
+                this.velocity = { x: (Math.random() - 0.5) * 6, y: (Math.random() - 0.5) * 6 };
+                this.alpha = 1;
+                this.friction = 0.96;
+            }
+            Particle.prototype.draw = function() {
+                ctx.save(); ctx.globalAlpha = this.alpha; ctx.fillStyle = this.color;
+                ctx.beginPath(); ctx.arc(this.x, this.y, 2, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+            };
+            Particle.prototype.update = function() {
+                this.velocity.x *= this.friction; this.velocity.y *= this.friction;
+                this.x += this.velocity.x; this.y += this.velocity.y; this.alpha -= 0.01;
+            };
+
+            function animate() {
+                requestAnimationFrame(animate);
+                // Hapus frame sebelumnya dengan warna hitam transparan
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)'; 
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                particles.forEach((p, i) => {
+                    p.alpha > 0 ? (p.update(), p.draw()) : particles.splice(i, 1);
+                });
+
+                if(Math.random() < 0.05) {
+                    const x = Math.random() * canvas.width;
+                    const y = Math.random() * canvas.height;
+                    const color = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                    for(let i=0; i<30; i++) particles.push(new Particle(x, y, color));
+                }
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
